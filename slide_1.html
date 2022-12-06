@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- #region: google font link-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Advent+Pro:wght@200&display=swap" rel="stylesheet">
+    <!-- #region: style css-->
+    <link rel="stylesheet" href="./assets/css/common.css">
+    <link rel="stylesheet" href="./assets/css/slide_1.css">
+    <!-- #endregion: style css-->
+    <title>Slide 1</title>
+</head>
+
+<body>
+    <div class="app">
+
+        <nav class="nav">
+
+        </nav>
+
+
+        <div class="slide_app js_slide_app" id="gallery_1">
+
+            <div class="slide_wrap">
+
+                <div class="slide">
+                    <div class="slide_images">
+                        <img class="slide_images__item" src="./assets/images/doraemon/img_1.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/doraemon/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/doraemon/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/doraemon/img_3.jpg" alt="">
+                    </div>
+                    <div class="slide_title">
+                        <h2 class="slide_title__main">Doraemon</h2>
+                        <span class="slide_title__lead">doraemon</span>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="slide_images">
+                        <img class="slide_images__item" src="./assets/images/nobita/img_1.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/nobita/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/nobita/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/nobita/img_3.jpg" alt="">
+                    </div>
+                    <div class="slide_title">
+                        <h2 class="slide_title__main">nobita</h2>
+                        <span class="slide_title__lead">nobita</span>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="slide_images">
+                        <img class="slide_images__item" src="./assets/images/shizuka/img_1.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/shizuka/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/shizuka/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/shizuka/img_3.jpg" alt="">
+                    </div>
+                    <div class="slide_title">
+                        <h2 class="slide_title__main">shizuka</h2>
+                        <span class="slide_title__lead">shizuka</span>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="slide_images">
+                        <img class="slide_images__item" src="./assets/images/chaien/img_1.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/chaien/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/chaien/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/chaien/img_3.jpg" alt="">
+                    </div>
+                    <div class="slide_title">
+                        <h2 class="slide_title__main">chaien</h2>
+                        <span class="slide_title__lead">chaien</span>
+                    </div>
+                </div>
+
+                <div class="slide">
+                    <div class="slide_images">
+                        <img class="slide_images__item" src="./assets/images/xeko/img_1.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/xeko/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/xeko/img_2.jpg" alt="">
+                        <img class="slide_images__item" src="./assets/images/xeko/img_3.jpg" alt="">
+                    </div>
+                    <div class="slide_title">
+                        <h2 class="slide_title__main">xeko</h2>
+                        <span class="slide_title__lead">xeko</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="slide_buttons">
+                <!-- prev next -->
+                <button class="slide_button slide__prev">
+                    <span class=""></span>
+                </button>
+                <button class="slide_button slide__next">
+                    <span class=""></span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="./assets/js/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.3/gsap.min.js"
+        integrity="sha512-gmwBmiTVER57N3jYS3LinA9eb8aHrJua5iQD7yqYCKa5x6Jjc7VDVaEA0je0Lu0bP9j7tEjV3+1qUm6loO99Kw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        const
+            slide = $('.slide'),
+            slidePrev = $('.slide__prev'),
+            slideNext = $('.slide__next');
+
+        let slideState = {
+            current_index: 0,
+            current_slide: null,
+            next_slide: null,
+            prev_slide: null,
+
+            infinite: true,
+            init_success: false,
+            current_class: 'slide__current',
+
+            prev_button: '.slide__prev',
+            next_button: '.slide__next',
+
+            time_duration: 1
+        };
+
+        const itemLoadingInit = () => {
+            const _ = $(".is_loading .item");
+            const t = new TimelineMax();
+            _.map((a, b) => {
+                t.set(b, {
+                    scaleX: 0.5,
+                    scaleY: 0.5,
+                    rotate: -10
+                }, 0);
+            });
+        }
+
+        const SlideAnimate = (e) => {
+            const
+                t = new TimelineMax(),
+                {
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    o1,
+                    o2,
+                    delay = 0,
+                    target
+                } = e;
+
+            t.set(target, {
+                transform: `translate(${x1}, ${y1})`,
+                opacity: o1
+            }, 0).to(target, slideState.time_duration, {
+                ease: Power2.easeInOut,
+                transform: `translate(${x2}, ${y2})`,
+                opacity: o2
+            }, delay);
+        };
+
+        const SlideOutNext = (e) => {
+            const
+                _ = e.find('.slide_images__item');
+
+            let
+                _i1 = _.eq(0),
+                _i2 = _.eq(1),
+                _i3 = _.eq(2),
+                _i4 = _.eq(3);
+
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: '-150%',
+                o1: 1,
+                o2: 0,
+                target: _i1,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: '150%',
+                y2: 0,
+                o1: 1,
+                o2: 0,
+                target: _i2,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: '-150%',
+                y2: 0,
+                o1: 1,
+                o2: 0,
+                target: _i3,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: '150%',
+                o1: 1,
+                o2: 0,
+                target: _i4,
+            });
+
+            setTimeout(() => {
+                e.removeClass(slideState.current_class);
+            }, slideState.time_duration * 1000);
+        };
+        const SlideOutPrev = (e) => {
+            const
+                _ = e.find('.slide_images__item');
+            let
+                _i1 = _.eq(0),
+                _i2 = _.eq(1),
+                _i3 = _.eq(2),
+                _i4 = _.eq(3);
+
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: '-150%',
+                y2: 0,
+                o1: 1,
+                o2: 0,
+                target: _i1,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: '-150%',
+                o1: 1,
+                o2: 0,
+                target: _i2,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: '150%',
+                o1: 1,
+                o2: 0,
+                target: _i3,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: '150%',
+                y2: 0,
+                o1: 1,
+                o2: 0,
+                target: _i4,
+            });
+
+            setTimeout(() => {
+                e.removeClass(slideState.current_class);
+            }, slideState.time_duration * 1000);
+
+        }
+
+        const SlideInNext = (e) => {
+            const
+                _ = e.find('.slide_images__item');
+
+            let
+                _i1 = _.eq(0),
+                _i2 = _.eq(1),
+                _i3 = _.eq(2),
+                _i4 = _.eq(3);
+
+            SlideAnimate({
+                x1: '-150%',
+                y1: 0,
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i1,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: '-150%',
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i2,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: '150%',
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i3,
+            });
+            SlideAnimate({
+                x1: '150%',
+                y1: 0,
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i4,
+            });
+            e.addClass(slideState.current_class);
+
+        };
+        const SlideInPrev = (e) => {
+            const
+                _ = e.find('.slide_images__item');
+
+            let
+                _i1 = _.eq(0),
+                _i2 = _.eq(1),
+                _i3 = _.eq(2),
+                _i4 = _.eq(3);
+
+            SlideAnimate({
+                x1: 0,
+                y1: '-150%',
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i1,
+            });
+
+            SlideAnimate({
+                x1: '150%',
+                y1: 0,
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i2,
+            });
+            SlideAnimate({
+                x1: '-150%',
+                y1: 0,
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i3,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: '150%',
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i4,
+            });
+            e.addClass(slideState.current_class);
+        };
+
+        const TitleIn = (e) => {
+            let
+                _i1 = e.find('.slide_title__main'),
+                _i2 = e.find('.slide_title__lead');
+
+            SlideAnimate({
+                x1: 0,
+                y1: '-150%',
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i1,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: '150%',
+                x2: 0,
+                y2: 0,
+                o1: 0,
+                o2: 1,
+                target: _i2,
+            });
+        };
+        const TitleOut = (e) => {
+            let
+                _i1 = e.find('.slide_title__main'),
+                _i2 = e.find('.slide_title__lead');
+
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: '-150%',
+                o1: 1,
+                o2: 0,
+                target: _i1,
+            });
+            SlideAnimate({
+                x1: 0,
+                y1: 0,
+                x2: 0,
+                y2: '150%',
+                o1: 1,
+                o2: 0,
+                target: _i2,
+            });
+        };
+
+        const SlideChangeAnimate = (e) => {
+            const {
+                slide_in,
+                slide_out,
+                sta
+            } = e;
+            const
+                titleIn = slide_in.find(".slide_title"),
+                titleOut = slide_out.find(".slide_title");
+
+            if (sta === 'next') {
+                SlideInNext(slide_in);
+                SlideOutNext(slide_out);
+            } else {
+                // SlideAnimate(slide_in);
+                SlideInPrev(slide_in);
+                SlideOutPrev(slide_out);
+            }
+            TitleOut(titleOut);
+            TitleIn(titleIn);
+        }
+
+
+        const SlideChange = (e) => {
+            const
+                _ = slideState,
+                {
+                    slide_target,
+                    sta
+                } = e;
+
+            let _index = slide_target.index(),
+                _next,
+                _prev;
+
+            _.current_index = _index;
+
+            switch (sta) {
+                case 'next': {
+                    _prev = _.current_slide;
+
+                    if (_index === slide.length - 1) {
+                        if (_.infinite) {
+                            _next = slide.eq(0);
+                        } else {
+                            _next = null;
+                            $(_.next_button).addClass('hidden');
+                        }
+                    } else {
+                        if (_index !== 0) {
+                            let _prev_button = $(_.prev_button);
+                            if (_prev_button.hasClass('hidden')) {
+                                _prev_button.removeClass('hidden');
+                            }
+                        }
+                        _next = slide_target.next();
+                    }
+
+                    _.prev_slide = _prev;
+                    _.next_slide = _next;
+
+                    break;
+                }
+
+                case 'prev': {
+                    _next = _.current_slide;
+
+                    if (_index === 0) {
+                        if (_.infinite) {
+                            _prev = slide.eq(slide.length - 1);
+                        } else {
+                            _prev = null;
+                            $(_.prev_button).addClass('hidden');
+                        }
+                    } else {
+                        if (_index !== 0) {
+                            let _next_button = $(_.next_button);
+                            if (_next_button.hasClass('hidden')) {
+                                _next_button.removeClass('hidden');
+                            }
+                        }
+                        _prev = slide_target.prev();
+                    }
+
+                    break;
+                }
+
+                default:
+                    break;
+            }
+
+            SlideChangeAnimate({
+                slide_in: slide_target,
+                slide_out: _.current_slide,
+                sta
+            });
+            _.prev_slide = _prev;
+            _.next_slide = _next;
+            _.current_slide = slide_target;
+        }
+
+        const SlideWillChange = (e) => {
+
+            const _ = slideState;
+            if (!_.init_success) return false;
+            const {
+                sta
+            } = e;
+
+            if (sta === 'next') {
+                let _slide = _.next_slide;
+                SlideChange({
+                    slide_target: _slide,
+                    sta
+                });
+            } else {
+                let _slide = _.prev_slide;
+                SlideChange({
+                    slide_target: _slide,
+                    sta
+                });
+            }
+        }
+
+
+        const SlideInit = (e) => {
+            //#region set default current on start
+            const _ = slideState;
+            let _index = _.current_index;
+
+            _.current_slide = slide.eq(_.current_index);
+            _.current_slide.addClass(_.current_class);
+
+            // next | prev
+            _.next_slide = slide.eq(1);
+            if (_.infinite) {
+                _.prev_slide = slide.eq(slide.length - 1);
+            } else {
+                $(_.prev_button).addClass('hidden');
+            }
+
+
+            slidePrev.on('click', function () {
+                SlideWillChange({
+                    sta: 'prev'
+                });
+                return false;
+            });
+            slideNext.on('click', function () {
+                SlideWillChange({
+                    sta: 'next'
+                });
+                return false;
+            });
+
+            //#region set prev || next button
+            _.init_success = true;
+        };
+
+        $(window).on('load', function () {
+            SlideInit();
+        });
+    </script>
+
+    <script>
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1230 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no, address=no, email=no">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=10.0, user-scalable=yes">
+
+    <!-- #region: google font link-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alata&display=swap" rel="stylesheet">
+    <!-- #endregion: google font link-->
+    <!-- #region: style css-->
+    <link rel="stylesheet" href="./assets/css/common.css">
+    <!-- <link rel="stylesheet" href="./assets/css/custom_squipgame.css"> -->
+    <!-- #endregion: style css-->
+    <title>Custom Squipgame</title>
+    <style>
+        body {
+            background-color: #ddd;
+        }
+
+        .mask {
+            position: fixed;
+            z-index: 999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+
+            background-color: rgba(0, 0, 0, 0.6);
+            transition: visibility 300ms ease, opacity 300ms linear;
+        }
+
+        .mask.hidden {
+            visibility: hidden;
+            opacity: 0;
+        }
+
+        .button {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            z-index: 999;
+            width: 200px;
+            height: 60px;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: red;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        li {
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="app" style="width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <div class="rule"
+            style="position: fixed;z-index: 1100; font-size: 1vw; top: 10px; left: 10px; background-color:#333; padding: 20px; display: block;">
+            <ul>
+                <li>
+                    i'm Red with white arrow
+                    <br>
+                    mình là con màu đỏ có cái mũi tên
+                </li>
+                <li>
+                    press arrow key to move
+                    <br>
+                    nhấn phím mũi tên để di chuyển
+                </li>
+                <li>
+                    reaching yellow line to win
+                    <br>
+                    chạm vạch màu vàng là thắng
+                </li>
+                <li>
+                    time to end game on top left side
+                    <br>
+                    thời gian trò chơi ở góc trái phía trên
+                </li>
+                <li>
+                    only 5 player can be win
+                    <br>
+                    chỉ có 5 người thắng thui
+                </li>
+            </ul>
+        </div>
+        <canvas id="canvas" style="display: block; margin-left: auto; margin-right: 10px;"></canvas>
+
+        <div class="mask">
+            <div class="button js_game_start">
+                Start</div>
+        </div>
+
+        <div class="ultis" style="position: fixed; z-index: -999; display: none;">
+            <img src="./img_target.png" id="js_img_target" alt="image target">
+        </div>
+    </div>
+
+    <script src="./assets/js/jquery-3.5.1.min.js"></script>
+    <script>
+        ;
+        (function () {
+            const canvas = document.querySelector('#canvas');
+            const ctx = canvas.getContext('2d');
+            const imgTarget = document.getElementById('js_img_target');
+
+            const gameSettings = {
+                //player
+                player_amount: 100,
+                player_color: '#4bebb0',
+                // -> request time_cd cd
+                time_cd: 100,
+                time_to_gameover: 10,
+                canvas_width: 640,
+                canvas_height: 1000,
+                createAreaHeight: 60,
+                createAreaWidthOffset: 20,
+
+                // line winner
+                lineGoalY: 80,
+
+                botID: 0,
+                padding: 20,
+                background_color: '#d4a453',
+            };
+
+            // -> game maining
+            let
+                _player,
+                _enemy,
+                _gameSystem,
+                _multiPlayer = [],
+                _bloodPlayer = [],
+                _bulletAuto = [],
+                _botPlayer = [],
+                _winlist = [],
+                _keys = {
+                    ArrowUp: false,
+                    ArrowLeft: false,
+                    ArrowDown: false,
+                    ArrowRight: false,
+                };
+            let
+                _scale = 1,
+                _ww = window.innerWidth,
+                _wh = window.innerHeight;
+
+            if (_ww > gameSettings.canvas_width) _ww = gameSettings.canvas_width;
+            if (_wh > gameSettings.canvas_height) _wh = gameSettings.canvas_height;
+
+            canvas.width = _ww - 20;
+            canvas.height = _wh - 20;
+            ctx.font = "24px Arial";
+            let
+                _h = canvas.height;
+            gameSettings.time_to_gameover = _h + 500;
+            // -> random Time 
+            const irandom = (n = 5, m = 15) => {
+                return Math.floor(Math.random() * (m - n) + n);
+            }
+            const vrandom = (n = 5, m = 15) => {
+                return Math.random() * (m - n) + n;
+            }
+            // -> 
+            function collision(r1, r2) {
+                var hit = !(r1.x + r1.s < r2.x ||
+                    r2.x + r2.s < r1.x ||
+                    r1.y + r1.s < r2.y ||
+                    r2.y + r2.s < r1.y);
+
+                if (hit) {
+                    return 'ok';
+                } else
+                    return 'none';
+            };
+
+            class GameSystem {
+                constructor() {
+                    this.timing = gameSettings.time_cd;
+                    this.list_winner = [];
+                    this.ready = false;
+                    this.ready_cd = 200;
+                    this.state = 'idle';
+                    this.time_to_gameover = gameSettings.time_to_gameover;
+                };
+
+                update() {
+                    this.step();
+                    this.draw();
+                }
+                step() {
+                    this.begin_step();
+                    this.end_step();
+                }
+                draw() {
+                    this.draw_gui();
+                }
+                begin_step() {
+                    switch (this.state) {
+                        case 'idle': {
+                            break;
+                        }
+                        case 'playing': {
+                            this.time_to_gameover--;
+                            if (this.time_to_gameover < 0 && this.state !== 'endgame_win') {
+                                this.state = 'endgame_lose';
+                            }
+                            break;
+                        }
+                        case 'ready': {
+                            let
+                                _t = this.ready_cd;
+                            if (_t > 0) {
+                                let
+                                    _timeShow = Math.floor(_t / 50),
+                                    _x = canvas.width * 0.5,
+                                    _y = canvas.height * 0.5;
+                                this.ready_cd--;
+                            } else {
+                                this.state = 'playing';
+                            }
+                            break;
+                        }
+
+                        case 'endgame_win': {
+                            _enemy.is_destroy = true;
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                }
+
+                end_step() {
+                    if (this.state === 'endgame_lose') {
+                        GameStartInit(false);
+                    }
+                };
+
+                draw_gui() {
+                    let
+                        _x1 = gameSettings.createAreaWidthOffset,
+                        _x2 = canvas.width - gameSettings.createAreaWidthOffset,
+
+                        _lineWidth = 14,
+                        _lineColor = 'yellow',
+                        _y2 = gameSettings.lineGoalY;
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = _lineColor;
+                    ctx.lineWidth = _lineWidth;
+                    ctx.moveTo(_x1, _y2);
+                    ctx.lineTo(_x2, _y2);
+                    ctx.stroke();
+
+                    switch (this.state) {
+
+                        case 'playing': {
+                            let
+                                _centerX = 10,
+                                _centerY = 50,
+                                _time = Math.floor(this.time_to_gameover / 50);
+                            ctx.fillStyle = '#fff';
+                            ctx.fillText(_time.toString(), _centerX, _centerY);
+
+                            break;
+                            break;
+                        }
+
+                        case 'ready': {
+                            let
+                                _centerX = canvas.width * 0.5 - 5,
+                                _centerY = canvas.width * 0.5,
+                                _time = Math.floor(this.ready_cd / 50);
+                            ctx.fillStyle = '#fff';
+                            if (_time > 0) {
+                                ctx.fillText(_time.toString(), _centerX, _centerY);
+                            } else {
+                                ctx.fillText('Start', _centerX - 29, _centerY);
+                            }
+                            break;
+                        }
+                        case 'endgame_lose': {
+                            let
+                                _centerX = canvas.width * 0.5 - 5,
+                                _centerY = canvas.width * 0.5;
+
+                            ctx.fillStyle = '#fff';
+                            ctx.fillText('Lose haha', _centerX - 60, _centerY);
+                            break;
+                        }
+                        case 'endgame_win': {
+                            let
+                                _centerX = canvas.width * 0.5 - 5,
+                                _centerY = canvas.width * 0.5;
+
+                            ctx.fillStyle = '#fff';
+                            ctx.fillText(`You are grade ${_winlist.length}`, _centerX - 120, _centerY);
+                            break;
+                        }
+
+                        default:
+                            break;
+                    }
+
+
+                    // -> draw win list
+                    if (_winlist.length !== 0) {
+                        for (let _i = 0; _i < _winlist.length; _i++) {
+                            let
+                                _x = 10,
+                                _y = 100 + _i * 30;
+                            ctx.fillStyle = '#fff';
+                            ctx.fillText('playerID: ' + _winlist[_i].toString(), _x, _y);
+                        };
+
+                        if (_winlist.length === 5 && this.state !== 'endgame_win') {
+                            this.state = 'endgame_lose';
+                        }
+                    }
+                }
+            };
+
+
+            class Player {
+                constructor(x, y, size, color, state) {
+                    this.aid = 'hihi';
+                    this.x = x;
+                    this.y = y;
+                    this.size = size;
+                    this.berun = false;
+                    this.hspd = 1;
+                    this.move_x = 0;
+                    this.vspd = 0.2;
+                    this.move_y = 0;
+
+                    this.final_hspd = 0;
+                    this.final_vspd = 0;
+                    this.velocity_x = 0;
+                    this.velocity_y = 0;
+                    this.color = color;
+                    this.state = state;
+
+                    this.is_target = false;
+                    this.time_to_scare = 100;
+
+                };
+
+                update() {
+                    this.step();
+                    this.draw();
+                }
+                step() {
+                    this.begin_step();
+                    this.end_step();
+                }
+                begin_step() {
+
+                    let
+                        _sta = this.state;
+                    switch (_sta) {
+
+                        case 'idle': {
+
+                            break;
+                        }
+
+                        case 'run': {
+                            // -> run y
+                            if (this.move_y !== 0) {
+                                if (this.move_y > 0) {
+                                    if (this.velocity_y < 1.4)
+                                        this.velocity_y += 0.2;
+                                } else {
+                                    if (this.velocity_y > -1.4)
+                                        this.velocity_y -= 0.2;
+                                }
+
+                            } else {
+                                if (this.velocity_y > 0) {
+                                    this.velocity_y -= 0.05;
+                                    if (this.velocity_y <= 0) {
+                                        this.velocity_y = 0;
+                                    }
+                                } else {
+                                    this.velocity_y += 0.05;
+                                    if (this.velocity_y >= 0) {
+                                        this.velocity_y = 0;
+                                    }
+                                }
+                            }
+
+                            this.final_hspd = this.hspd * this.move_x;
+                            this.final_vspd = this.vspd * this.move_y + this.velocity_y;
+
+                            if (this.y + this.size * 2 < gameSettings.lineGoalY) {
+                                _winlist.push(this.aid);
+                                _gameSystem.state = 'endgame_win';
+                            }
+                            break;
+                        }
+
+                        case 'scare': {
+                            this.time_to_scare--;
+                            if (this.time_to_scare < 0) {
+                                _gameSystem.state = 'endgame_lose';
+                            }
+                            break;
+                        }
+
+
+                        default:
+                            break;
+                    }
+                }
+                end_step() {
+                    this.x += this.final_hspd;
+                    this.y += this.final_vspd;
+
+                    if (this.final_hspd === 0 && this.final_vspd === 0 && !this.berun && !this.is_target) {
+                        this.state = 'idle';
+                    }
+
+                    // move collision
+                    let
+                        _x = this.x,
+                        _y = this.y,
+                        _s = this.size,
+                        _id = this.aid,
+                        _sta = this.state,
+                        _tar = this.is_target,
+                        _isberun = false;
+
+                    _botPlayer.map(a => {
+                        if (a.aid != _id) {
+                            let _mine = {
+                                    x: _x,
+                                    y: _y,
+                                    s: _s
+                                },
+                                _target = {
+                                    x: a.x,
+                                    y: a.y,
+                                    s: a.size
+                                },
+                                _check = collision(_mine, _target);
+                            if (_check !== 'none') {
+                                // if (a.state === 'run' || _sta === 'run') {
+                                //     a.state === 'run'
+                                if (!_tar) {
+                                    this.state = 'run';
+                                    this.berun = true;
+                                    _isberun = true;
+                                }
+                                // }
+                                if (_x < a.x) {
+                                    this.x -= 2;
+                                }
+                                if (_x > a.x + a.size) {
+                                    this.x += 2;
+                                }
+                                if (_y < a.y) {
+                                    this.y -= 2;
+                                }
+                                if (_y > a.y + a.size) {
+                                    this.y += 2;
+                                }
+                            };
+                        };
+                    });
+                    this.berun = _isberun;
+
+                    if (this.x < 0 || this.x > canvas.width || this.y > canvas.height) {
+                        this.is_target = true;
+                        this.state = 'scare';
+                    };
+                }
+
+                draw() {
+                    this.draw_self();
+                }
+                draw_self() {
+                    let
+                        _x = this.x,
+                        _y = this.y,
+                        _c = this.color,
+                        _pointX = _x + this.size * 0.5 - 15,
+                        _pointY = _y + this.size * 0.5 - 26;
+
+                    ctx.fillStyle = _c;
+                    ctx.fillRect(_x, _y, 10, 10);
+
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.moveTo(_pointX, _pointY);
+                    ctx.lineTo(_pointX + 15, _pointY + 15);
+                    ctx.lineTo(_pointX + 30, _pointY);
+                    ctx.fill();
+
+                    //  ctx.fillText(this.state.toString(), _pointX, _pointY);
+                    if (this.is_target) {
+                        ctx.drawImage(imgTarget, 0, 0, 512, 512, this.x - 25, this.y - 25, 60, 60);
+                    }
+                };
+            };
+
+            const check_keyboard = (k, t) => {
+                if (k === t) return true;
+                return false;
+            };
+
+            window.addEventListener('keydown', (e) => {
+                if (_player.state === 'scare') return false;
+                let
+                    _key = e.key;
+                if (_key === 'ArrowRight') {
+                    _keys.ArrowRight = true;
+                }
+                if (_key === 'ArrowLeft') {
+                    _keys.ArrowLeft = true;
+                };
+                if (_key === 'ArrowUp') {
+                    _keys.ArrowUp = true;
+                }
+                if (_key === 'ArrowDown') {
+                    _keys.ArrowDown = true;
+                }
+                let
+                    _movex = _keys.ArrowRight - _keys.ArrowLeft,
+                    _movey = _keys.ArrowDown - _keys.ArrowUp;
+                _player.state = 'run';
+                _player.move_x = _movex;
+                _player.move_y = _movey;
+            });
+            window.addEventListener('keyup', (e) => {
+                if (_player.state === 'scare') return false;
+                let
+                    _key = e.key;
+                if (_key === 'ArrowRight') {
+                    _keys.ArrowRight = false;
+                }
+                if (_key === 'ArrowLeft') {
+                    _keys.ArrowLeft = false;
+                };
+                if (_key === 'ArrowUp') {
+                    _keys.ArrowUp = false;
+                }
+                if (_key === 'ArrowDown') {
+                    _keys.ArrowDown = false;
+                }
+                let
+                    _movex = _keys.ArrowRight - _keys.ArrowLeft,
+                    _movey = _keys.ArrowDown - _keys.ArrowUp;
+                _player.move_x = _movex;
+                _player.move_y = _movey;
+            });
+
+            // -> bot player
+            class BotPlayer {
+                constructor(aid, x, y, size, ai, color, state) {
+                    this.aid = aid;
+                    this.x = x;
+                    this.y = y;
+                    this.size = size;
+                    this.ai = ai;
+                    this.color = color;
+
+                    this.state = state;
+                    this.vspd = 0.5;
+                    this.hspd = 0.5;
+
+                    this.time_to_change_state = irandom(100, 200);
+                    this.time_to_scare = 50;
+
+                    this.is_target = false;
+
+                    this.is_destroy = false;
+                    this.time_to_die = 10;
+                };
+                update() {
+                    this.step();
+                    this.draw();
+                }
+                step() {
+                    this.begin_step();
+                    this.end_step();
+                }
+
+                begin_step() {
+                    let
+                        _sta = this.state,
+                        _beChange = false;
+                    this.time_to_change_state--;
+                    if (this.ai === 'normal') {
+                        switch (_sta) {
+
+                            case 'idle': {
+
+                                if (this.time_to_change_state < 0) {
+                                    _beChange = true;
+                                    let
+                                        _m = irandom(0, 10);
+                                    _m < 2 ? this.state = 'scare' : (this.state = 'run', this.vspd =
+                                        vrandom(-1,
+                                            0.5),
+                                        this.vspd = vrandom(-1, 1));
+                                }
+                                break;
+                            }
+
+                            case 'run': {
+                                if (this.time_to_change_state < 0) {
+                                    _beChange = true;
+                                    this.state = 'idle';
+                                }
+
+                                this.y += this.vspd;
+                                this.x += this.hspd;
+
+                                if (this.y + this.size * 2 < gameSettings.lineGoalY) {
+                                    this.state = 'win';
+                                    _winlist.push(this.aid);
+                                }
+                                break;
+                            }
+
+                            case 'scare': {
+                                this.time_to_scare--;
+                                let
+                                    _x = 0,
+                                    _y = 0;
+                                if (this.time_to_scare < 0) {
+                                    let
+                                        _x = vrandom(-1, 1),
+                                        _y = vrandom(-1, 1);
+                                    let
+                                        _m = irandom(0, 10);
+                                    if (_m < 6) {
+                                        this.state = 'idle';
+                                    } else {
+                                        this.time_to_scare = 50;
+                                        this.state = 'scare';
+                                    };
+                                }
+
+                                this.x += _x;
+                                this.y += _y;
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+                    } else {
+                        // ai good idea
+                        if (_enemy.state === 'redlight' && !this.is_target) {
+                            this.state = 'idle';
+                        }
+
+                        switch (_sta) {
+
+                            case 'idle': {
+
+                                if (_enemy.state === 'greenlight') {
+                                    let
+                                        _r = irandom(0, 10);
+                                    this.vspd = vrandom(-1.4, -1);
+                                    if (_r < 3) {
+                                        this.state = 'scare';
+                                    } else {
+                                        this.state = 'run';
+                                        this.hspd = 0;
+                                    }
+                                }
+
+                                break;
+                            }
+
+                            case 'run': {
+
+                                this.y += this.vspd;
+                                if (this.y + this.size * 2 < gameSettings.lineGoalY) {
+                                    this.state = 'win';
+                                    _winlist.push(this.aid);
+                                }
+                                break;
+                            }
+                            case 'scare': {
+
+                                this.time_to_scare--;
+                                if (this.time_to_scare < 0) {
+
+                                    this.hspd = vrandom(-1, 1),
+                                        this.vspd = vrandom(-1, 1);
+                                    let
+                                        _m = irandom(0, 10);
+                                    if (_m < 6) {
+                                        this.state = 'idle';
+                                    } else {
+                                        this.time_to_scare = 50;
+                                        this.state = 'scare';
+                                    };
+                                }
+
+                                this.x += this.vspd;
+                                this.y += this.hspd;
+                                break;
+                            }
+                            default:
+                                break;
+                        }
+                    }
+                    switch (_sta) {
+                        case 'die': {
+                            this.time_to_die--;
+
+                            if (this.time_to_die < 0) {
+                                this.is_destroy = true;
+
+                                let _m = irandom(4, 10);
+                                for (let _i = 0; _i < _m; _i++) {
+                                    let
+                                        _x = this.x,
+                                        _y = this.y,
+                                        _vx = vrandom(-2, 2),
+                                        _vy = vrandom(-2, 2),
+                                        _s = vrandom(1, 2);
+
+                                    const blood = new PlayerBlood(_x, _y, _vx, _vy, _s);
+                                    _bloodPlayer.push(blood);
+                                }
+                            }
+                            break;
+                        }
+
+                        default:
+                            break;
+                    }
+
+                    if (_beChange) {
+                        this.time_to_change_state = irandom(160, 200);
+                    }
+                }
+
+                end_step() {
+                    if (_multiPlayer.length === 0) return;
+                    let
+                        _x = this.x,
+                        _y = this.y,
+                        _s = this.size,
+                        _sta = this.state,
+                        _id = this.aid;
+
+                    // check collision
+                    _botPlayer.map(a => {
+                        if (a.aid != _id) {
+                            let _mine = {
+                                    x: _x,
+                                    y: _y,
+                                    s: _s
+                                },
+                                _target = {
+                                    x: a.x,
+                                    y: a.y,
+                                    s: a.size
+                                },
+                                _check = collision(_mine, _target);
+                            if (_check !== 'none') {
+                                if (a.state === 'run' || _sta === 'run') {
+                                    a.state === 'idle'
+                                    this.state = 'idle';
+                                }
+                                if (_x < a.x) {
+                                    this.x -= 1;
+                                }
+                                if (_x > a.x + a.size) {
+                                    this.x += 1;
+                                }
+                                if (_y < a.y) {
+                                    this.y -= 1;
+                                }
+                                if (_y > a.y + a.size) {
+                                    this.y += 1;
+                                }
+                            }
+                        };
+                    });
+
+                    if (this.x < 0 || this.x > canvas.width || this.y > canvas.height) {
+                        this.is_target = true;
+                        this.state = 'die';
+                    };
+                }
+
+                draw() {
+                    this.draw_self();
+                }
+                draw_self() {
+                    let
+                        _x = this.x,
+                        _y = this.y,
+                        _c = this.color,
+                        _s = this.size;
+
+                    ctx.fillStyle = _c;
+                    ctx.fillRect(_x, _y, _s, _s);
+
+                    // ctx.fillText(this.state, _x, _y);
+                    if (this.is_target) {
+                        ctx.drawImage(imgTarget, 0, 0, 512, 512, this.x - 25, this.y - 25, 60, 60);
+                    }
+                };
+            }
+
+            // -> player die
+            class PlayerBlood {
+                constructor(x, y, vx, vy, size) {
+                    this.x = x;
+                    this.y = y;
+                    this.size = size;
+                    this.color = 'red';
+
+                    this.vx = vx;
+                    this.vy = vy;
+
+                    this.time_destroy = 50;
+                    this.timing = 40;
+
+                    this.is_destroy = false;
+                }
+
+                update() {
+                    this.step();
+                    this.draw();
+                }
+
+                step() {
+                    this.end_step();
+                }
+
+                end_step() {
+                    if (this.timing > 0) {
+                        this.timing--;
+                        this.x += this.vx;
+                        this.y += this.vy;
+                        this.size += 0.3;
+                    } else {
+                        this.time_destroy--;
+                        if (this.time_destroy < 0) {
+                            this.is_destroy = true;
+                        }
+                    }
+                }
+
+                draw() {
+                    this.draw_self();
+                }
+                draw_self() {
+                    let
+                        _x = this.x,
+                        _y = this.y,
+                        _s = this.size,
+                        _c = this.color;
+
+                    ctx.fillStyle = _c;
+                    ctx.fillRect(_x, _y, _s, _s);
+                }
+            };
+
+            // -> bullet to 
+            class BulletAuto {
+                constructor(x, y, targetx, targety) {
+                    this.x = x;
+                    this.y = y;
+                    this.targetx = targetx;
+                    this.targety = targety;
+                    this.color = 'white';
+
+                    this.is_destroy = false;
+                }
+                update() {
+                    let
+                        _xto = this.targetx - this.x,
+                        _yto = this.targety - this.y;
+
+                    this.x += _xto * 0.2;
+                    this.y += _yto * 0.2;
+
+                    if (Math.sqrt((this.x - this.targetx) ** 2 + (this.y - this.targety) ** 2) < 30) {
+                        this.is_destroy = true;
+                    }
+
+                    let
+                        _x = this.x,
+                        _y = this.y,
+                        _s = 6,
+                        _c = this.color;
+
+                    ctx.fillStyle = _c;
+                    ctx.fillRect(_x, _y, _s, _s);
+                }
+            }
+
+            //-> enemy
+            class Enemy {
+                constructor(x, y, state) {
+                    this.x = x;
+                    this.y = y;
+                    this.size = 50;
+                    this.state = state;
+
+                    this.state_time_max = 200;
+                    this.state_time = 200;
+
+                    this.is_destroy = false;
+                    this.round = 0;
+
+                    this.redlight_color = '#f0304a';
+                    this.greenlight_color = '#4ff06a';
+                };
+
+                update() {
+                    this.step();
+                    this.draw();
+                }
+                step() {
+                    this.end_step();
+                }
+
+                end_step() {
+                    if (this.is_destroy) return;
+                    let
+                        _s = this.state,
+                        _beChange = false;
+
+                    this.state_time--;
+                    switch (_s) {
+
+                        case 'idle': {
+                            if (this.state_time < 0) {
+                                this.state = 'greenlight';
+                                _beChange = true;
+                            }
+                            break;
+                        }
+
+                        case 'greenlight': {
+                            if (this.state_time < 0) {
+                                this.state = 'redlight';
+                                _beChange = true;
+                            }
+                            break;
+                        }
+                        case 'redlight': {
+                            if (this.state_time < 0) {
+                                this.state = 'greenlight';
+                                _beChange = true;
+                            }
+
+                            _botPlayer.map(a => {
+                                if ((a.state === 'run' || a.state === 'scare') && !a.is_target) {
+                                    a.is_target = true;
+                                    a.state = 'die';
+                                    let
+                                        _mx = this.x,
+                                        _my = this.y,
+                                        _x = a.x,
+                                        _y = a.y;
+                                    const bullet = new BulletAuto(_mx, _my, _x, _y);
+                                    _bulletAuto.push(bullet);
+
+                                };
+                            });
+
+                            if (_player.state === 'run' && !_player.is_target) {
+                                _player.is_target = true;
+                                _player.state = 'scare';
+
+                                let _m = irandom(4, 10);
+                                for (let _i = 0; _i < _m; _i++) {
+                                    let
+                                        _x = _player.x,
+                                        _y = _player.y,
+                                        _vx = vrandom(-2, 2),
+                                        _vy = vrandom(-2, 2),
+                                        _s = vrandom(1, 2);
+
+                                    const blood = new PlayerBlood(_x, _y, _vx, _vy, _s);
+                                    _bloodPlayer.push(blood);
+                                };
+                                // _gameSystem.state = 'endgame_lose';
+                            };
+                            break;
+                        };
+                    default:
+                        break;
+                    }
+                    if (_beChange) {
+                        let
+                            _time = 160 - this.round * 10;
+                        if (_time <= 30) {
+                            _time = 30;
+                        };
+
+                        this.state_time_max = _time;
+                        this.state_time = _time;
+                        this.round++;
+                    }
+                };
+
+                draw() {
+                    this.draw_self();
+                    this.draw_gui();
+                }
+
+                draw_self() {
+                    let
+                        _x = this.x,
+                        _y = this.y,
+                        _s = this.size,
+                        _c = this.greenlight_color;
+
+                    if (this.state === 'redlight') {
+                        _c = this.redlight_color;
+                    }
+                    ctx.fillStyle = _c;
+                    ctx.fillRect(_x, _y, _s, _s);
+
+                }
+                draw_gui() {
+                    let
+                        _s = this.state,
+                        _x1 = gameSettings.padding,
+                        _xw = canvas.width - gameSettings.padding * 2,
+                        _y1 = 65,
+                        _yh = 5,
+                        _c = this.greenlight_color,
+                        _per = (this.state_time / this.state_time_max) * _xw;
+                    if (_s === 'redlight') {
+                        _c = this.redlight_color;
+                    };
+                    if (_s !== 'idle' && _s !== '') {
+                        ctx.fillStyle = _c;
+                        ctx.fillRect(_x1, _y1, _per, _yh);
+
+                        //  ctx.fillText(this.state_time.toString(), 100, 100);
+                    }
+                }
+            };
+
+            // -> bot player
+            const BotPlayerInit = () => {
+                for (let _i = 0; _i < gameSettings.player_amount; _i++) {
+                    let
+                        _x = irandom(gameSettings.createAreaWidthOffset, canvas.width - gameSettings
+                            .createAreaWidthOffset * 2),
+                        _y = irandom(canvas.height - gameSettings.padding * 2, canvas.height - gameSettings
+                            .padding * 4),
+                        _id = gameSettings.botID,
+                        _size = irandom(10, 20),
+                        _c = gameSettings.player_color,
+                        _ai = 'normal',
+                        _state = '';
+
+                    if (_id % 4 === 0) {
+                        _ai = 'intelligent';
+                    };
+
+                    _bot = new BotPlayer(_id, _x, _y, _size, _ai, _c, _state);
+                    _botPlayer.push(_bot);
+                    gameSettings.botID += 1;
+                }
+            };
+
+            const PlayerInit = () => {
+                let
+                    _x = irandom(gameSettings.padding, canvas.width - gameSettings.padding *
+                        2),
+                    _y = irandom(canvas.height - gameSettings.padding * 2, canvas.height - gameSettings
+                        .padding * 4);
+
+                _player = new Player(_x, _y, 10, 'red', 'idle');
+                _multiPlayer.push(_player);
+            }
+            const EnemyInit = () => {
+                let
+                    _enemyX = canvas.width * 0.5 - 15,
+                    _enemyY = 10;
+                _enemy = new Enemy(_enemyX, _enemyY, '');
+            }
+
+            const SystemInit = () => {
+                _gameSystem = new GameSystem();
+            }
+            const ResetInit = () => {
+                _player = {};
+                _enemy = {}
+                _gameSystem = {};
+                _multiPlayer = [];
+                _bloodPlayer = [];
+                _bulletAuto = [];
+                _botPlayer = [];
+                _winlist = [];
+
+                _keys = {
+                    ArrowUp: false,
+                    ArrowLeft: false,
+                    ArrowDown: false,
+                    ArrowRight: false,
+                };
+            }
+            const GameInit = () => {
+                ResetInit();
+                SystemInit();
+                PlayerInit();
+                EnemyInit();
+                BotPlayerInit();
+            };
+            GameInit();
+
+
+            // -> star game
+            const StartGame = () => {
+                _gameSystem.state = 'ready';
+                _enemy.state = 'greenlight';
+                _botPlayer.map(e => {
+                    let
+                        _state = 'idle',
+                        _id = e.aid;
+
+                    if (_id % 4 === 0) {
+                        _state = 'run';
+                    }
+                    if (_id % 10 === 0) {
+                        _state = 'scare';
+                    }
+
+                    e.state = _state;
+                });
+            };
+
+            //  GameInit();
+            const animate = () => {
+
+                //clear
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = gameSettings.background_color;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                _gameSystem.update();
+                if (_gameSystem.state === 'playing') {
+                    // -> bot update
+                    if (_botPlayer.length !== 0) {
+                        _botPlayer = _botPlayer.filter(e => !e.is_destroy);
+                        _botPlayer.map(e => {
+                            e.update();
+                        });
+                    };
+
+                    // -> player update
+                    _player.update();
+
+                    // -> enemy update
+                    _enemy.update();
+
+                    // -> blood update
+                    if (_bloodPlayer.length !== 0) {
+                        _bloodPlayer = _bloodPlayer.filter(e => !e.is_destroy);
+                        _bloodPlayer.map(e => {
+                            e.update();
+                        });
+                    }
+
+                    // -> bullet update
+                    if (_bulletAuto.length !== 0) {
+                        _bulletAuto = _bulletAuto.filter(e => !e.is_destroy);
+                        _bulletAuto.map(e => {
+                            e.update();
+                        });
+                    }
+                } else {
+
+                    _botPlayer.map(e => {
+                        e.draw();
+                    });
+
+                    _player.draw();
+                    _enemy.draw();
+                }
+                requestAnimationFrame(animate);
+
+            };
+            animate();
+
+            const gameStart = $('.js_game_start');
+            let _isfirst = true;
+            gameStart.on('click', function () {
+                if (_isfirst) {
+                    _isfirst = false;
+                } else {
+                    GameInit();
+                }
+                GameStartInit(true);
+            });
+            const GameStartInit = (e) => {
+                if (e) {
+                    StartGame();
+                    $('.mask').addClass('hidden');
+                } else {
+                    $('.mask').removeClass('hidden');
+                }
+            }
+        })();
+    </script>
+</body>
+
+</html>

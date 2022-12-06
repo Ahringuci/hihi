@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no, address=no, email=no">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=10.0, user-scalable=yes">
+
+    <!-- #region: google font link-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alata&display=swap" rel="stylesheet">
+
+    <!-- #region: title -->
+    <title>Custom Bird Shoot Game</title>
+
+    <!-- #region: style -->
+    <style>
+        *,
+        *::after,
+        *::before {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Alata", sans-serif;
+            color: #ccc;
+            background-color: #000913;
+            word-wrap: break-word;
+            font-size: 16px;
+        }
+
+        .app,
+        .block {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .block {
+            height: 544px;
+        }
+
+        .rule.hidden,
+        .button.hidden {
+            visibility: hidden;
+            opacity: 0;
+            display: none;
+        }
+
+        .button {
+            width: 100px;
+            height: 40px;
+
+            margin-top: auto;
+            margin-left: 10px;
+            border-radius: 8px;
+            background-color: #b248f0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .rule {
+            width: 100%;
+            max-width: 50vw;
+        }
+
+        li {
+            padding-top: 10px;
+            padding-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        #canvas {
+            display: block;
+            border: 1px solid #fff;
+
+            background-color: #000;
+            cursor: none;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="app" style="width: 100%; height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <div class="rule"
+            style="position: fixed;z-index: 1100; font-size: 1vw; display: block; top: 10px; left: 10px; background-color:#333; padding: 20px;">
+            <ul>
+                <li>
+                    ' Left Click ' to shoot.
+                    <br>Bấm chuột trái để bắn đạn.
+                </li>
+                <li>
+                    ' Right Click ' to zoom.
+                    <br>Bấm chuột phải để zoom lại gần dễ bắn.
+                </li>
+                <li>
+                    We have only 100 bullet to fire
+                    <br>Chỉ có 100 viên đạn thui.
+                </li>
+                <li>
+                    Not enought bullet or total bird onscreen more than 14 is lose
+                    <br>Hết đạn hoặc lượng chim nhiều hơn 14 là đi.
+                </li>
+                <li>
+                    Try to get more score
+                    <br>
+                    Ráng chơi lâu lâu tí T.T
+                </li>
+            </ul>
+        </div>
+
+        <div class="block">
+            <canvas id="canvas"></canvas>
+            <div class=" button js_game_start">Start</div>
+        </div>
+
+
+        <div class="ultis" style="position: fixed; z-index: -999; display: none;">
+            <img src="./assets/images/bird_shoot/sprite.png" id="js_sprite" alt="image up">
+        </div>
+    </div>
+    <script type="module" src="./assets/js/bird_shot/index.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,39 @@
+@charset 'UTF-8';
+
+img {
+    width: 100%;
+    display: block;
+}
+
+.nav {
+    &_slide {
+        display: flex;
+
+        .item {
+            width: 400px;
+
+            transform: scale(0);
+            transition: transform 2000ms ease-in-out;
+            overflow: hidden;
+            opacity: 0;
+
+            img {
+                opacity: 0;
+                transform: scale(10);
+                transition: transform 1800ms ease-in-out 800ms;
+            }
+
+            &.act {
+                transform: scale(1);
+                opacity: 1;
+
+                img {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+        }
+
+
+    }
+}

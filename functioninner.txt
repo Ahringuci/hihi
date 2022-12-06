@@ -1,0 +1,68 @@
+(function (factory) {
+            'use strict';
+            if (typeof define === 'function' && define.amd) {
+                define(['jquery'], factory);
+            } else if (typeof exports !== 'undefined') {
+                module.exports = factory(require('jquery'));
+            } else {
+                factory(jQuery);
+            };
+        }(function ($) {
+            let slide = {};
+            slide = (function () {
+                function slide_inner(element, settings) {
+                    // console.log(elements, options);
+                    let _ = this;
+
+                    _.defaults = {
+                        arrows: true,
+                        dots: false,
+                        infinite: true,
+                        initialSlide: 0,
+                        draggable: true,
+                        focusOnSelect: false,
+                        focusOnChange: false,
+                        swipeToSlide: false,
+                        pauseOnHover: true,
+                        prevArrow: '<button class="slick_prev">Previous</button>',
+                        nextArrow: '<button class="slick_next">Next</button>',
+                    };
+                    
+                    _.options = $.extend({}, _.defaults, settings);
+                    _.currentSlide = _.options.initialSlide;
+                    _.originalSettings = _.options;
+
+                    _.init();
+                }
+                return slide_inner;
+            }());
+
+            slide.prototype.initUI = function () {
+                let _ = this;
+                console.log('initUI');
+            }
+
+            slide.prototype.hihi = function () {
+                console.log('hihi')
+            }
+
+            slide.prototype.init = function () {
+                let _ = this;
+                _.initUI();
+            }
+
+            $.fn.app = function () {
+                let _ = this,
+                    opt = arguments[0],
+                    args = Array.prototype.slice.call(arguments, 1);
+
+                for (i = 0; i < _.length; i++) {
+                    if (typeof opt == 'object' || typeof opt == 'undefined') {
+                        _[i].slick = new slide(_[i], opt);
+                    }
+                    return false;
+                }
+                return _;
+            };
+        }));
+        $(".js_slide_app").app();

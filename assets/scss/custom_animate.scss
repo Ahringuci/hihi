@@ -1,0 +1,248 @@
+@charset 'UTF-8';
+
+.app {
+    display: flex;
+
+    .props_render {
+        width: 40%;
+        height: 100%;
+    }
+
+    .view_render {
+        width: 60%;
+        height: 100%;
+    }
+
+    @media only screen and (max-width: 1000px) {
+        display: block;
+        padding: 20px;
+
+        font-size: 14px;
+
+        .props_render,
+        .view_render {
+            width: 100%;
+        }
+    }
+}
+
+.app_toggler {
+    width: 40px;
+    height: 40px;
+
+    position: fixed;
+    z-index: 1024;
+    display: none;
+    top: 20px;
+    right: 20px;
+    background-color: #333;
+
+    cursor: pointer;
+
+    border: 2px solid #ccc;
+    border-radius: 4px;
+
+    span {
+        width: 30px;
+        height: 2px;
+
+        border-radius: 99px;
+        position: absolute;
+        left: 4px;
+
+        background-color: #fff;
+        transition: transform 300ms ease;
+
+        &:nth-child(1) {
+            top: calc(30% + 1px);
+        }
+
+        &:nth-child(2) {
+            top: calc(60% + 1px);
+        }
+    }
+
+    &.opened {
+        span {
+            top: calc(50% - 1px);
+
+            &:nth-child(1) {
+                transform: rotate(45deg);
+            }
+
+            &:nth-child(2) {
+                transform: rotate(-45deg);
+            }
+        }
+    }
+
+    @media only screen and (max-width: 1000px) {
+        display: block;
+    }
+}
+
+
+.ranger {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 5px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+
+    cursor: pointer;
+}
+
+.ranger:hover {
+    opacity: 1;
+}
+
+.ranger::-webkit-ranger-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: red;
+    cursor: pointer;
+}
+
+.ranger::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #04AA6D;
+    cursor: pointer;
+}
+
+.group_inline {
+    width: 100%;
+
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 40px;
+
+    label {
+        width: 100%;
+        display: block;
+    }
+
+    .result {
+        display: inline-block;
+        margin-left: 10px;
+    }
+
+    input[type="range"] {
+        margin-top: 12px;
+        display: block;
+    }
+}
+
+.props_render {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 20px;
+
+    h3 {
+        font-size: 1.5vw;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        text-align: center;
+
+        border-bottom: 1px solid #ccc;
+    }
+
+    .step {
+        width: calc(50% - 10px);
+    }
+
+
+    @media only screen and (max-width: 1000px) {
+        position: fixed;
+        z-index: 1000;
+        top: 0;
+        left: 0;
+        background-color: #333;
+        overflow: auto;
+
+        padding-top: 80px;
+        padding-bottom: 60px;
+
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility 300ms ease, opacity 200ms linear 100ms;
+
+        h3 {
+            font-size: 3.5vw;
+        }
+
+        &.opened {
+            opacity: 1;
+            visibility: visible;
+        }
+    }
+}
+
+.view_render {
+
+    .screen {
+        width: 100%;
+        height: 80vh;
+        min-height: 400px;
+
+        overflow: hidden;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .div_target {
+            width: 200px;
+        }
+
+        img {
+            width: 100%;
+            display: block;
+        }
+    }
+
+    h3 {
+        font-size: 20px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        text-align: center;
+
+        border-bottom: 1px solid #ccc;
+    }
+
+    .step {
+        width: calc(50% - 10px);
+    }
+
+}
+
+.run {
+    width: 240px;
+    height: 60px;
+    max-width: 100%;
+
+    display: block;
+
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+
+    margin-top: 30px;
+    margin-bottom: 10px;
+    margin-left: auto;
+    margin-right: auto;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    border: 2px solid #ddd;
+}

@@ -1,0 +1,30 @@
+img {
+  width: 100%;
+  display: block;
+}
+
+.nav_slide {
+  display: flex;
+}
+.nav_slide .item {
+  width: 400px;
+  transform: scale(0);
+  transition: transform 2000ms ease-in-out;
+  overflow: hidden;
+  opacity: 0;
+}
+.nav_slide .item img {
+  opacity: 0;
+  transform: scale(10);
+  transition: transform 1800ms ease-in-out 800ms;
+}
+.nav_slide .item.act {
+  transform: scale(1);
+  opacity: 1;
+}
+.nav_slide .item.act img {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/*# sourceMappingURL=custom_artside.css.map */

@@ -1,0 +1,61 @@
+*,
+*::after,
+*::before {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+::selection {
+    color: #09b5e5;
+    background-color: #333;
+}
+
+::-moz-selection {
+    /* Code for Firefox */
+    color: #09b5e5;
+    background-color: #333;
+}
+
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+    background-color: #09b5e5;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 99px;
+    background-color: #09b5e5;
+}
+
+html {
+    line-height: 1.15;
+}
+
+html.is-loading {
+    overflow: hidden;
+}
+
+body {
+    font-family: "Alata", sans-serif;
+    color: #ccc;
+    background-color: #000913;
+    word-wrap: break-word;
+    font-size: 16px;
+    letter-spacing: 0.05em;
+}
+
+p {
+    line-height: 1.6;
+}
+
+button {
+    outline: none;
+    border: 0;
+    background-color: transparent;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}

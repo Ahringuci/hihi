@@ -1,0 +1,21 @@
+*,
+*::after,
+*::before {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Consolas, monaco, monospace;
+  color: #ccc;
+  word-wrap: break-word;
+  background-color: #000913;
+  font-size: 15px;
+}
+
+.spritesheet {
+  display: none;
+}
+
+/*# sourceMappingURL=game.css.map */
