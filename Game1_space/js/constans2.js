@@ -1,3 +1,31 @@
+// -> object
+
+export const oMouse = {
+    x: -1,
+    y: -1,
+};
+export const oSpace = {
+    target_id: -1,
+    target_index: 0,
+    arr: [],
+};
+export const oSpaceBullets = {
+    arr: [],
+};
+
+export const oEnemy = {
+    arr: [],
+};
+export const oEnemyBullets = {
+    arr: [],
+};
+export const oDisplayed = {
+    arr: [],
+};
+export const oButtons = {
+    arr: [],
+};
+
 export const o = {
     mouse: {
         x: 0,
@@ -359,129 +387,6 @@ export const enemys_line = {
             [1, 0, 0, 0, 1, 0, 0, 0, 1],
             [1, 1, 0, 1, 1, 1, 0, 1, 1],
         ],
-    },
-};
-
-export const sprites = {
-    yellow: {
-        x: 0,
-        y: 5 * 64,
-        w: 128,
-        h: 128,
-        atk: 1,
-        firing_delay: 24,
-        type: "three_bullet",
-        bullet_speed: 10,
-        bullet: {
-            lv1: {
-                x: 6 * 32,
-                y: 0,
-                w: 32,
-                h: 16,
-                s: 10,
-                sw: 32,
-                sh: 32,
-            },
-            lv2: {
-                x: 2 * 32,
-                y: 0,
-                w: 32,
-                h: 32,
-                s: 10,
-                sw: 32,
-                sh: 32,
-            },
-        },
-    },
-    red: {
-        x: 0,
-        y: 7 * 64,
-        w: 128,
-        h: 128,
-        atk: 5,
-        firing_delay: 24,
-        type: "big_bullet",
-        bullet_speed: 8,
-        bullet: {
-            lv1: {
-                x: 7 * 32,
-                y: 0,
-                w: 32,
-                h: 32,
-                s: 20,
-                sw: 64,
-                sh: 64,
-            },
-            lv2: {
-                x: 3 * 32,
-                y: 0,
-                w: 32,
-                h: 32,
-                s: 20,
-                sw: 32,
-                sh: 32,
-            },
-        },
-    },
-    green: {
-        x: 0,
-        y: 9 * 64,
-        w: 128,
-        h: 128,
-        atk: 1,
-        firing_delay: 16,
-        type: "double_bullet",
-        bullet_speed: 10,
-        bullet: {
-            lv1: {
-                x: 8 * 32,
-                y: 0,
-                w: 32,
-                h: 16,
-                s: 10,
-                sw: 32,
-                sh: 16,
-            },
-            lv2: {
-                x: 4 * 32,
-                y: 0,
-                w: 32,
-                h: 32,
-                s: 10,
-                sw: 32,
-                sh: 32,
-            },
-        },
-    },
-    blue: {
-        x: 0,
-        y: 11 * 64,
-        w: 128,
-        h: 128,
-        atk: 1,
-        firing_delay: 4,
-        type: "triple_bullet",
-        bullet_speed: 8,
-        bullet: {
-            lv1: {
-                x: 9 * 32,
-                y: 0,
-                w: 32,
-                h: 32,
-                s: 10,
-                sw: 32,
-                sh: 32,
-            },
-            lv2: {
-                x: 5 * 32,
-                y: 0,
-                w: 32,
-                h: 32,
-                s: 10,
-                sw: 32,
-                sh: 32,
-            },
-        },
     },
 };
 

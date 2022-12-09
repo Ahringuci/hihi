@@ -1,5 +1,13 @@
 import { settings } from "./settings.js";
-import { o, enemys_line, sprites, animations, supports } from "./constans.js";
+import {
+    o,
+    enemys_line,
+    sprites,
+    animations,
+    supports,
+    stages,
+} from "./constans.js";
+
 import {
     draw_sprite_part,
     draw_sprite_part_ext,
@@ -7,6 +15,7 @@ import {
     draw_text_ext,
     point_distance,
     draw_text,
+    mouse_inside,
 } from "./gml.js";
 const pi = 3.14;
 const defaults = {
@@ -37,7 +46,6 @@ const defaults = {
 
 //color: ["#f0488b", "#b248f0", "#48f06f", "#aff048", "#f08848"];
 (function () {
-    const HIGHSCORE = "game1_space__highscore";
     const ENEMY_TYPE = [
         "none",
         "none",
@@ -74,18 +82,27 @@ const defaults = {
     const ctx = canvas.getContext("2d");
     const sprite_index = document.getElementById("sprite_index");
 
-    const create_enemy_line = (order, arr, hp) => {
-        const { pad } = settings.camera;
+    const game_save = () => {
+        let _x = JSON.stringify(stages.data);
+        localStorage.setItem("game1_map", _x);
+    };
+    const game_load = () => {
+        const map_load = localStorage.getItem("game1_map");
+        if (map_load) {
+            stages.data = JSON.parse(map_load);
+        }
+    };
 
+    const create_enemy_line = (order, arr, hp) => {
         for (let i = 0; i < arr.length; i++) {
             if (arr[i] === 1) {
-                let _dx = defaults.size * 2 + 20,
-                    _dy = defaults.size * 2 + 10,
+                let _dx = defaults.size * 2 + 54,
+                    _dy = defaults.size * 2 + 26,
                     _id = settings.counter.id,
-                    _x = pad + _dx * i,
+                    _x = 100 + _dx * i,
                     _y = defaults.size * -1.5,
                     _hp = hp,
-                    _y_target = pad + _dy * order,
+                    _y_target = 60 + _dy * order,
                     _type = "none",
                     _mode = "mode",
                     _size = defaults.size;
@@ -114,6 +131,31 @@ const defaults = {
         o.enemys.push(enemy);
         settings.counter.id++;
     };
+    const create_player = (sprite) => {
+        let _sprite = sprites[sprite];
+        o.player = new Player(_sprite);
+        o.playerweapon = new PlayerWeapon(_sprite);
+    };
+    const create_map_item = () => {
+        let _row = 0,
+            _col = 0;
+
+        const { data } = stages;
+        for (let i = 0; i < data.length; i++) {
+            let _x = 110 + _row * 80,
+                _y = 100 + _col * 80,
+                _item = data[i];
+
+            const mapitem = new MapItem(i, _x, _y, _item);
+            o.stage_map.push(mapitem);
+
+            _row++;
+            if (_row % 9 === 0) {
+                _col++;
+                _row = 0;
+            }
+        }
+    };
 
     const create_instance_item = (x, y) => {
         // ---------- > create mode
@@ -127,15 +169,122 @@ const defaults = {
     let _mx = 272 - 30 * 0.5,
         _my = 444;
 
-    class Button {
-        constructor(x, y, type, text) {
+    class System {
+        constructor() {
+            this.screen = "home";
+            this.state = "idle";
+
+            this.setting = false;
+        }
+        update() {
+            this.step();
+            this.draw();
+        }
+        step() {
+            if (!this.setting) {
+                // -> create something for game
+                game_load();
+                create_map_item();
+
+                const startButton = new Button(370, 460, "play_stage", true);
+                o.buttons.push(startButton);
+
+                this.setting = true;
+            }
+        }
+        draw() {
+            draw_text_ext(ctx, 800, 30, this.screen, "#fff", "right");
+            draw_text_ext(ctx, 800, 60, this.state, "#fff", "right");
+        }
+    }
+
+    class MapItem {
+        // ---------- > time, size, speed
+        constructor(id, x, y, map_data) {
+            this.id = id;
             this.x = x;
             this.y = y;
+
+            this.size = 48;
+            this.is_hover = false;
+            this.is_selected = false;
+            this.is_clicked = false;
+
+            this.map_data = map_data;
+            this.is_destroy = false;
+        }
+
+        update() {
+            this.step();
+            this.draw();
+        }
+
+        step() {
+            // -> hover
+            let _is_hover = false;
+            const { mouse } = o;
+            if (
+                mouse_inside(
+                    this.x,
+                    this.y,
+                    this.size,
+                    this.size,
+                    mouse.x,
+                    mouse.y
+                )
+            ) {
+                _is_hover = true;
+            }
+            this.is_hover = _is_hover;
+
+            if (this.is_clicked && !this.is_selected && this.map_data.unlock) {
+                const { stage_map } = o;
+                for (let i = 0; i < stage_map.length; i++) {
+                    const a = stage_map[i];
+                    a.is_selected = false;
+                    a.is_clicked = false;
+                    if (!a.map_data.unlock) {
+                        break;
+                    }
+                }
+                o.stage_map_id = this.map_data.id;
+                this.is_selected = true;
+            }
+        }
+
+        draw() {
+            const { id, star, unlock } = this.map_data;
+            if ((this.is_hover && unlock) || this.is_selected) {
+                ctx.fillStyle = "blue";
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            } else {
+                ctx.fillStyle = "red";
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+            }
+
+            if (unlock) {
+                for (let i = 0; i < star; i++) {
+                    let _x = this.x + i * 12,
+                        _y = this.y;
+                    draw_text_ext(ctx, _x, _y, "*", "#fff");
+                }
+            } else {
+                draw_text_ext(ctx, this.x, this.y, "unlock", "#fff");
+            }
+        }
+    }
+
+    class Button {
+        constructor(x, y, type, can_click) {
+            this.x = x;
+            this.y = y;
+
             this.w = 160;
             this.h = 60;
 
             this.type = type;
-            this.text = text;
+            this.can_click = can_click;
+
             this.is_clicked = false;
         }
         update() {
@@ -143,32 +292,42 @@ const defaults = {
             this.draw();
         }
         step() {
-            if (this.is_clicked) {
+            if (this.is_clicked && this.can_click) {
                 switch (this.type) {
-                    case "play": {
-                        const { stage } = o;
-                        stage.state = "ready";
-                        stage.is_playing = true;
+                    case "play_stage": {
+                        const { stage_map_id } = o;
+                        console.log(stage_map_id);
+                        if (stage_map_id === -1) {
+                            alert("select map first");
+                        } else {
+                            const { stage_map, buttons, stage, system } = o;
+                            stage_map.length = 0;
+                            buttons.length = 0;
+
+                            stage.state = stage.enum.change_state;
+                            stage.is_playing = true;
+                            stage.enemy_shape = enemys_line.shape[stage_map_id];
+
+                            system.screen = "map_stage";
+                            create_player("blue");
+                        }
                         break;
                     }
                     default:
                         break;
                 }
 
-                this.is_destroy = true;
+                this.is_clicked = false;
             }
         }
         draw() {
-            ctx.fillStyle = "#08c6d4";
-            ctx.fillRect(this.x, this.y, this.w, this.h);
-            draw_text_ext(
-                ctx,
-                this.x + this.w * 0.5,
-                this.y + this.h * 0.5,
-                this.text,
-                "#fff",
-                "center"
-            );
+            if (!this.can_click) {
+                ctx.fillStyle = "red";
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+            } else {
+                ctx.fillStyle = "#08c6d4";
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+            }
         }
     }
 
@@ -181,43 +340,25 @@ const defaults = {
                 change_state: "change_state",
                 end_game: "end_game",
             };
+
+            this.state = "idle";
             this.is_playing = false;
 
-            this.level = 1;
-
-            this.enemy_shape = enemys_line.shape.guide;
-            this.enemy_shape_line = enemys_line.rows;
+            this.enemy_shape = [];
+            this.enemy_shape_line = 7;
 
             this.time_create_each_line = 60;
             this.time_create_each_line_max = 60;
 
-            this.time_for_prepare = 100;
-
-            this.score = 0;
-            this.highscore = 0;
-
-            this.state = "idle";
             this.is_prepare = false;
             this.time_break = 100;
-            this.next_level = false;
+
+            this.is_get_result = false;
+            this.view_result_timing = 100;
         }
 
-        reset() {
-            this.level = 1;
+        reset() {}
 
-            this.spawn = 3;
-            this.time_spawn = 20;
-            this.spawn_at_time = 1;
-            this.spawn_repeat = 5;
-            this.enemy_hp = 4;
-
-            this.score = 0;
-
-            this.state = "idle";
-            this.is_prepare = false;
-            this.time_break = 100;
-            this.next_level = false;
-        }
         update() {
             this.step();
             this.draw();
@@ -226,9 +367,8 @@ const defaults = {
         step() {
             if (this.state === this.enum.change_state) {
                 this.time_break--;
-                this.next_level = false;
                 if (this.time_break < 0) {
-                    this.state = "ready";
+                    this.state = this.enum.create_enemy;
                     this.time_break = 100;
                 }
             }
@@ -240,108 +380,95 @@ const defaults = {
                 if (this.time_create_each_line < 0) {
                     // -> create enemy with line
                     if (this.enemy_shape_line < 0) {
-                        this.state = "";
-                        console.log("out state");
+                        this.state = "waiting";
+                        this.enemy_shape_line = 7;
                     } else {
                         let _order = this.enemy_shape_line;
                         const line = this.enemy_shape[_order];
 
-                        create_enemy_line(_order, line, 10);
+                        create_enemy_line(_order, line, 6);
 
                         // -> update info with shape
                         this.enemy_shape_line--;
-                        this.time_create_each_line =
-                            this.time_create_each_line_max;
                     }
+                    this.time_create_each_line = this.time_create_each_line_max;
                 }
             }
 
-            // -> ready state
-            if (this.state === this.enum.ready) {
-                this.time_for_prepare--;
-                if (this.time_for_prepare < 0) {
-                    this.state = this.enum.create_enemy;
-                    this.time_for_prepare = 100;
+            // -> waiting end game
+            if (this.state === "waiting") {
+                const { enemys } = o;
+
+                if (enemys.length === 0) {
+                    console.log("first");
+                    this.is_playing = false;
+                    this.state = "get_result";
                 }
             }
+            // -> is get result
+            if (this.state === "get_result") {
+                if (!this.is_get_result) {
+                    const { stage_map_id } = o;
 
-            // -> end game state
-            if (this.state === this.enum.end_game) {
-                const { camera } = settings;
-                if (!this.is_prepare) {
-                    let _starButtonX = camera.w * 0.5 - 80,
-                        _starButtonY = camera.h * 0.5 + 100;
+                    const { data } = stages;
+                    for (let i = 0; i < data.length; i++) {
+                        const a = data[i];
 
-                    const startButton = new Button(
-                        _starButtonX,
-                        _starButtonY,
-                        "play",
-                        "Click to play"
-                    );
-                    o.buttons.push(startButton);
+                        if (a.id === stage_map_id) {
+                            console.log("first");
+                            a.star = 3;
+                            if (a.star === 3) {
+                                if (i !== data.length - 1) {
+                                    console.log("i");
+                                    data[i + 1].unlock = true;
+                                } else {
+                                    console.log("end");
+                                    break;
+                                }
+                            } else {
+                                break;
+                            }
+                        }
+                    }
 
-                    // ---------- > reset all
-                    o.items = [];
-                    o.enemys = [];
+                    // -> save
+                    game_save();
+
+                    this.is_get_result = true;
+                }
+
+                this.view_result_timing--;
+                if (this.view_result_timing < 0) {
+                    this.state = "idle";
+                    o.system.screen = "home";
+                    o.player = "noone";
+                    o.playerweapon = "noone";
+                    o.system.setting = false;
+                    o.stage_map_id = -1;
                     o.bullets = [];
+                    o.items = [];
                     o.enemy_bullets = [];
-                    o.bloods = [];
 
-                    this.is_prepare = true;
+                    this.is_get_result = false;
+                    this.view_result_timing = 100;
                 }
-            }
-
-            if (this.next_level && o.enemys.length === 0) {
-                // ---------- > choice shape before next level
-                // after that render enemy with shape
-
-                console.log("luc nay la chon shape lat render");
-                this.level++;
-                this.spawn = this.level + 4;
-                if (this.spawn > 30) {
-                    this.spawn = 30;
-                }
-
-                // ---------- > bonus
-                o.playerweapon.firing_delay -= 0.5;
-                o.playerweapon.atk++;
-                if (o.playerweapon.firing_delay < 3) {
-                    o.playerweapon.firing_delay = 3;
-                }
-
-                this.state = "change_stage";
             }
         }
 
         draw() {
             const { camera } = settings;
             let _y = camera.h;
-            draw_text_ext(ctx, 10, 56, this.level, "#fff");
+
             draw_text_ext(ctx, 10, _y - 60, "state " + this.state, "#fff");
-            draw_text_ext(ctx, 10, _y - 40, "Score " + this.score, "#fff");
-            draw_text_ext(
-                ctx,
-                10,
-                _y - 20,
-                "HighScore " + this.highscore,
-                "#fff"
-            );
 
             // -> draw text stage level in ready state
-            if (this.state === this.enum.ready) {
+            if (this.state === this.enum.change_state) {
                 ctx.save();
                 ctx.font = settings.font.stage;
                 let _cx = camera.w * 0.5,
                     _cy = camera.h * 0.55,
-                    _rgba = `rgba(255,255,255,${this.time_for_prepare / 100})`;
-                draw_text_ext(
-                    ctx,
-                    _cx,
-                    _cy,
-                    "STAGE " + this.level,
-                    _rgba,
-                    "center"
-                );
+                    _rgba = `rgba(255,255,255,${this.time_break / 100})`;
+                draw_text_ext(ctx, _cx, _cy, "ready", _rgba, "center");
                 ctx.restore();
             }
 
@@ -352,39 +479,25 @@ const defaults = {
                     _cy = camera.h * 0.55;
                 draw_text_ext(ctx, _cx, _cy, "LOSE", "#fff", "center");
                 ctx.restore();
-                draw_text_ext(
-                    ctx,
-                    _cx,
-                    _cy + 30,
-                    "Your score " + this.score,
-                    "#fff",
-                    "center"
-                );
             }
         }
     }
 
     class Player {
-        constructor() {
+        constructor(sprite, hp) {
             this.x = 272 - 30 * 0.5;
             this.y = 444;
 
-            this.hp = 15;
-            this.hp_max = 15;
+            this.hp = hp;
+            this.hp_max = hp;
 
             this.state = "idle";
 
             this.size = 24;
 
-            this.mode = "none";
-
-            this.can_take_dmg = true;
-            this.time_take_dmg = 12;
-
             this.is_destroy = false;
-            this.time_destroy = 60;
 
-            this.sprite = sprites.blue;
+            this.sprite = sprite;
         }
 
         reset() {}
@@ -400,24 +513,12 @@ const defaults = {
 
                 this.x += _xto * 0.2;
                 this.y += _yto * 0.2;
-
-                if (!this.can_take_dmg) {
-                    this.time_take_dmg--;
-                    if (this.time_take_dmg < 0) {
-                        this.can_take_dmg = true;
-                        this.time_take_dmg = 12;
-                    }
-                }
             }
+
             if (this.hp <= 0) {
                 this.is_destroy = true;
-            }
-            if (this.is_destroy) {
-                this.time_destroy--;
-                if (this.time_destroy < 0) {
-                    o.stage.state = o.stage.enum.end_game;
-                    o.stage.is_playing = false;
-                }
+                o.stage.state = o.stage.enum.end_game;
+                o.stage.is_playing = false;
             }
         }
 
@@ -442,18 +543,18 @@ const defaults = {
     }
 
     class PlayerWeapon {
-        constructor() {
+        constructor(sprite) {
             this.state = "idle";
 
             this.firing = 15;
             this.multi_degree = 15;
 
-            this.sprite = sprites.blue;
-            this.bullet_level = "lv2";
+            this.sprite = sprite;
+            this.bullet_level = "lv1";
 
             // -> buff
-            this.buff_asp = true;
-            this.buff_asp_x2 = 0;
+            this.buff_asp = false;
+            this.buff_asp_x2 = 1;
             this.buff_asp_x2_timing = 200;
         }
         reset() {}
@@ -480,7 +581,7 @@ const defaults = {
                 const { x, y, size } = o.player;
 
                 // -> bullet from const
-                const { atk, firing_delay, type } = this.sprite;
+                const { atk, firing_delay, type, bullet_speed } = this.sprite;
 
                 switch (type) {
                     // -> case yellow bullet
@@ -499,7 +600,7 @@ const defaults = {
                                     "none",
                                     0,
                                     10,
-                                    8
+                                    bullet_speed
                                 );
                             o.bullets.push(_bullet);
                         }
@@ -522,7 +623,7 @@ const defaults = {
                                 "none",
                                 0,
                                 10,
-                                6
+                                bullet_speed
                             );
                         o.bullets.push(_bullet);
                         this.firing = firing_delay * this.buff_asp_x2;
@@ -544,7 +645,7 @@ const defaults = {
                                     "none",
                                     0,
                                     10,
-                                    6
+                                    bullet_speed
                                 );
                             o.bullets.push(_bullet);
                         }
@@ -567,7 +668,7 @@ const defaults = {
                                     "none",
                                     0,
                                     10,
-                                    6
+                                    bullet_speed
                                 );
                             o.bullets.push(_bullet);
                         }
@@ -1033,12 +1134,6 @@ const defaults = {
                         );
                         o.animations.push(animation);
 
-                        o.stage.score += o.stage.level;
-                        if (o.stage.score > o.stage.highscore) {
-                            o.stage.highscore = o.stage.score;
-                            localStorage.setItem(HIGHSCORE, o.stage.highscore);
-                        }
-
                         if (enemy.create_item >= 4) {
                             create_instance_item(this.x, this.y);
                         }
@@ -1137,10 +1232,16 @@ const defaults = {
 
             this.id = id;
             this.x = x;
+            this.x_left = x - 40;
+            this.x_right = x + 40;
+
             this.y = y;
 
             this.hp = hp;
+            this.hp_max = hp;
+
             this.hspd = 0;
+            this.velocity = 1;
             this.vspd = 0;
 
             this.type = "a";
@@ -1149,7 +1250,7 @@ const defaults = {
             this.size = size;
 
             this.y_target = y_target;
-            this.time_for_stand = irandom_range(10, 300);
+            this.time_for_stand = irandom_range(120, 300);
             this.move_auto = false;
 
             this.create_item = irandom_range(1, 5);
@@ -1170,12 +1271,19 @@ const defaults = {
                 this.y++;
             } else {
                 this.time_for_stand--;
+                this.state = "move_x";
                 if (this.time_for_stand < 0 && !this.move_auto) {
                     this.state = "move_auto";
                 }
             }
-            if (this.hp < 6 && !this.move_auto) {
+            if (this.hp <= this.hp_max * 0.3 && !this.move_auto) {
                 this.state = "move_auto";
+            }
+            if (this.state === "move_x") {
+                this.x += this.velocity;
+                if (this.x <= this.x_left || this.x >= this.x_right) {
+                    this.velocity *= -1;
+                }
             }
             if (this.state === "move_auto") {
                 this.move_auto = true;
@@ -1221,6 +1329,16 @@ const defaults = {
                     this.image_index = 0;
                 }
                 this.image_speed = 0;
+            }
+
+            if (
+                this.state === "move_auto" &&
+                (this.y < canvas.h ||
+                    this.x < 0 ||
+                    this.x > canvas.w ||
+                    this.x < 0)
+            ) {
+                this.is_destroy = true;
             }
         }
 
@@ -1476,6 +1594,7 @@ const defaults = {
     const GameSetting = () => {
         const { camera, font } = settings;
         // ---------- > set canvas width height
+
         canvas.width = camera.w;
         canvas.height = camera.h;
 
@@ -1485,48 +1604,44 @@ const defaults = {
 
     const GameInit = () => {
         const { camera } = settings;
+        o.system = new System();
 
         o.stage = new Stage();
-        const highscore = localStorage.getItem(HIGHSCORE);
-        if (highscore) {
-            o.stage.highscore = highscore;
-        }
-        o.player = new Player();
-        o.playerweapon = new PlayerWeapon();
 
         // let _l = new PlayerWeaponSuport("left", "blue");
         // o.weapon_supports.push(_l);
-        // let _r = new PlayerWeaponSuport("right", "green");
+        // let _r = new PlayerWeaponSuport("right", "blue");
         // o.weapon_supports.push(_r);
-
-        let _starButtonX = camera.w * 0.5 - 80,
-            _starButtonY = camera.h * 0.5 - 20;
-
-        const startButton = new Button(
-            _starButtonX,
-            _starButtonY,
-            "play",
-            "Click to play"
-        );
-        o.buttons.push(startButton);
 
         canvas.onmousemove = function (e) {
             e.preventDefault();
+            let x = e.offsetX,
+                y = e.offsetY;
+
+            o.mouse = { x, y };
+
             _mx = e.offsetX;
             _my = e.offsetY;
         };
         canvas.onclick = function (e) {
             e.preventDefault();
-            const { buttons } = o;
+            const { buttons, mouse, stage_map } = o;
             for (let i = 0; i < buttons.length; i++) {
-                const button = buttons[i];
+                const a = buttons[i];
+                if (mouse_inside(a.x, a.y, a.w, a.h, mouse.x, mouse.y)) {
+                    a.is_clicked = true;
+                }
+            }
+
+            for (let i = 0; i < stage_map.length; i++) {
+                const a = stage_map[i];
                 if (
-                    _mx > button.x &&
-                    _my > button.y &&
-                    _mx < button.x + button.w &&
-                    _my < button.y + button.h
+                    mouse.x > a.x &&
+                    mouse.y > a.y &&
+                    mouse.x < a.x + a.size &&
+                    mouse.y < a.y + a.size
                 ) {
-                    button.is_clicked = true;
+                    a.is_clicked = true;
                 }
             }
         };
@@ -1537,14 +1652,15 @@ const defaults = {
 
     const Update = () => {
         const {
+            system,
             stage,
+            stage_map,
             player,
             playerweapon,
             bullets,
             items,
             enemys,
             enemy_bullets,
-            bloods,
             buttons,
             animations,
             weapon_supports,
@@ -1562,18 +1678,32 @@ const defaults = {
 
         // ctx.save();
         // ----------+----------+---------- > controller
-        stage.update();
-        for (let i = 0; i < buttons.length; i++) {
-            const button = buttons[i];
-            if (button.is_destroy) {
-                o.buttons.splice(i, 1);
-                i--;
-            } else {
-                button.update();
+        system.update();
+        if (system.screen === "home") {
+            for (let i = 0; i < stage_map.length; i++) {
+                const a = stage_map[i];
+                if (a.is_destroy) {
+                    o.stage_map.splice(i, 1);
+                    i--;
+                } else {
+                    a.update();
+                }
             }
         }
+        if (system.screen === "map_stage") {
+            stage.update();
+        }
 
-        if (stage.is_playing) {
+        for (let i = 0; i < buttons.length; i++) {
+            const a = buttons[i];
+            if (a.is_destroy) {
+                buttons.splice(i, 1);
+                i--;
+            } else {
+                a.update();
+            }
+        }
+        if (stage.is_playing && stage.state !== "end_game") {
             for (let i = 0; i < enemy_bullets.length; i++) {
                 const a = enemy_bullets[i];
                 if (a.is_destroy) {
@@ -1612,9 +1742,12 @@ const defaults = {
                 }
             }
 
-            player.update();
-            playerweapon.update();
-
+            if (player !== "noone") {
+                player.update();
+            }
+            if (playerweapon !== "noone") {
+                playerweapon.update();
+            }
             for (let i = 0; i < animations.length; i++) {
                 const a = o.animations[i];
                 if (a.is_destroy) {
@@ -1622,16 +1755,6 @@ const defaults = {
                     i--;
                 } else {
                     a.update();
-                }
-            }
-
-            for (let i = 0; i < bloods.length; i++) {
-                const blood = bloods[i];
-                if (blood.is_destroy) {
-                    o.bloods.splice(i, 1);
-                    i--;
-                } else {
-                    blood.update();
                 }
             }
 
